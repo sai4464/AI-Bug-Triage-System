@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Triage API - Testing Interface</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .hero-section {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            background: rgba(255,255,255,0.15) !important;
+        }
+        
+        .mode-selector label {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .mode-selector label:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        
+        .btn-check:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-color: transparent !important;
+            color: white !important;
+            transform: scale(1.05);
+        }
+        
+        .form-control:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="text-center mb-5">
+                    <div class="hero-section p-5 rounded-4 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <h1 class="display-3 mb-3 text-white fw-bold">
+                            <i class="fas fa-robot me-3 text-warning"></i>
+                            AI Bug Triage
+                        </h1>
+                        <p class="lead text-white-50 mb-4">
+                            Intelligent bug classification powered by advanced AI models
+                        </p>
+                        <div id="aiStatus" class="alert alert-light border-0" style="display: none; background: rgba(255,255,255,0.9);">
+                            <i class="fas fa-robot me-2 text-primary"></i>
+                            <span id="aiStatusText">Checking AI status...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode Selection -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="mode-selector p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <input type="radio" class="btn-check" name="testMode" id="singleMode" autocomplete="off" checked>
+                                    <label class="btn btn-outline-light w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" for="singleMode" style="border-radius: 15px; min-height: 120px;">
+                                        <i class="fas fa-bug fa-2x mb-2 text-warning"></i>
+                                        <span class="fw-bold">Single Bug</span>
+                                        <small class="text-muted">Test individual reports</small>
+                                    </label>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="radio" class="btn-check" name="testMode" id="batchMode" autocomplete="off">
+                                    <label class="btn btn-outline-light w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" for="batchMode" style="border-radius: 15px; min-height: 120px;">
+                                        <i class="fas fa-list fa-2x mb-2 text-info"></i>
+                                        <span class="fw-bold">Batch Test</span>
+                                        <small class="text-muted">Process 10-20 bugs</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Single Bug Testing Form -->
+                <div class="card border-0 shadow-lg" id="singleTestCard" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-header text-center py-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <h3 class="card-title mb-0 text-white fw-bold">
+                            <i class="fas fa-microscope me-3"></i>
+                            Single Bug Analysis
+                        </h3>
+                    </div>
+                    <div class="card-body p-5">
+                        <form id="triageForm">
+                            <div class="mb-4">
+                                <label for="bugTitle" class="form-label fw-bold text-dark">
+                                    <i class="fas fa-heading me-2 text-primary"></i>
+                                    Bug Title <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="bugTitle" 
+                                       placeholder="e.g., Login button not responding..." required
+                                       style="border-radius: 12px; border: 2px solid #e9ecef;">
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Provide a concise summary of the issue
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="bugDescription" class="form-label fw-bold text-dark">
+                                    <i class="fas fa-align-left me-2 text-primary"></i>
+                                    Bug Description <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="bugDescription" rows="6" 
+                                          placeholder="Describe the bug in detail, including steps to reproduce, expected vs actual behavior, and any relevant details..." required
+                                          style="border-radius: 12px; border: 2px solid #e9ecef; resize: vertical;"></textarea>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    The more details you provide, the better the AI analysis
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg w-100 py-3" id="submitBtn"
+                                    style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                                <i class="fas fa-magic me-3"></i>
+                                <span class="fw-bold">Analyze with AI</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Batch Testing Form -->
+                <div class="card border-0 shadow-lg" id="batchTestCard" style="display: none; border-radius: 20px; overflow: hidden;">
+                    <div class="card-header text-center py-4" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <h3 class="card-title mb-0 text-white fw-bold">
+                            <i class="fas fa-rocket me-3"></i>
+                            Batch Analysis
+                        </h3>
+                    </div>
+                    <div class="card-body p-5">
+                        <div class="mb-4">
+                            <div class="text-center mb-3">
+                                <i class="fas fa-bolt fa-2x text-warning mb-2"></i>
+                                <h5 class="fw-bold">Quick Start</h5>
+                                <p class="text-muted">Get started instantly with sample data</p>
+                            </div>
+                            <button type="button" class="btn btn-warning btn-lg w-100 py-3" id="sampleDataBtn"
+                                    style="border-radius: 15px; border: none;">
+                                <i class="fas fa-download me-3"></i>
+                                <span class="fw-bold">Load 15 Sample Bug Reports</span>
+                            </button>
+                        </div>
+                        
+                        <form id="batchTriageForm">
+                            <div class="mb-4">
+                                <label for="batchBugs" class="form-label fw-bold text-dark">
+                                    <i class="fas fa-code me-2 text-primary"></i>
+                                    Bug Reports JSON <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="batchBugs" rows="12" 
+                                          placeholder="Paste your JSON data here or use the sample data above..." required
+                                          style="border-radius: 12px; border: 2px solid #e9ecef; font-family: 'Monaco', 'Menlo', monospace; font-size: 14px;"></textarea>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Format: {"bugs": [{"title": "Bug 1", "description": "Desc 1"}, ...]}
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success btn-lg w-100 py-3" id="batchSubmitBtn"
+                                    style="border-radius: 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: none;">
+                                <i class="fas fa-rocket me-3"></i>
+                                <span class="fw-bold">Launch Batch Analysis</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center mt-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Analyzing bug report with AI...</p>
+                </div>
+
+                <!-- Single Bug Results -->
+                <div id="resultCard" class="card shadow mt-4" style="display: none;">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Analysis Results
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-tag fa-2x text-info me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1 text-muted">Category</h6>
+                                        <span id="categoryResult" class="fs-5 fw-bold"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-exclamation-triangle fa-2x me-3" id="urgencyIcon"></i>
+                                    <div>
+                                        <h6 class="mb-1 text-muted">Urgency Level</h6>
+                                        <span id="urgencyResult" class="fs-5 fw-bold"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Results Dashboard -->
+                <div id="batchResultCard" class="card shadow mt-4" style="display: none;">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-dashboard me-2"></i>
+                            Batch Analysis Dashboard
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Stats -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 id="totalBugs" class="text-primary">0</h3>
+                                    <small class="text-muted">Total Bugs</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 id="processedBugs" class="text-success">0</h3>
+                                    <small class="text-muted">Processed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 id="criticalBugs" class="text-danger">0</h3>
+                                    <small class="text-muted">Critical</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 id="highBugs" class="text-warning">0</h3>
+                                    <small class="text-muted">High Priority</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Distribution -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6>Category Distribution</h6>
+                                <div id="categoryStats" class="d-flex flex-wrap gap-2">
+                                    <!-- Dynamic category badges will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Table -->
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Title</th>
+                                        <th>Category</th>
+                                        <th>Urgency</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batchResultsTable">
+                                    <!-- Dynamic results will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorCard" class="alert alert-danger mt-4" style="display: none;">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error
+                    </h5>
+                    <p id="errorMessage" class="mb-0"></p>
+                </div>
+
+                <!-- Features Showcase -->
+                <div class="text-center mt-5 mb-4">
+                    <h2 class="display-5 fw-bold text-white mb-4">
+                        <i class="fas fa-star text-warning me-3"></i>
+                        Why Choose AI Bug Triage?
+                    </h2>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="feature-card text-center p-4 rounded-4 h-100" 
+                             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-brain fa-3x text-primary"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3">AI-Powered Analysis</h4>
+                            <p class="text-white-50">Advanced machine learning models understand context and provide intelligent bug classification with confidence scores.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="feature-card text-center p-4 rounded-4 h-100" 
+                             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-bolt fa-3x text-warning"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3">Lightning Fast</h4>
+                            <p class="text-white-50">Process single bugs instantly or analyze batches of 10-20 reports in seconds with our optimized AI pipeline.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="feature-card text-center p-4 rounded-4 h-100" 
+                             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-shield-alt fa-3x text-success"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3">Smart Prioritization</h4>
+                            <p class="text-white-50">Automatically assess urgency levels and categorize bugs for optimal resource allocation and faster resolution.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-4 mt-4">
+                    <div class="col-md-6">
+                        <div class="feature-card text-center p-4 rounded-4 h-100" 
+                             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-chart-line fa-3x text-info"></i>
+                                </div>
+                            <h4 class="fw-bold text-white mb-3">Confidence Scoring</h4>
+                            <p class="text-white-50">Transparent AI decision-making with detailed confidence scores for both category and urgency classifications.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="feature-card text-center p-4 rounded-4 h-100" 
+                             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-mobile-alt fa-3x text-danger"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3">Responsive Design</h4>
+                            <p class="text-white-50">Beautiful, modern interface that works perfectly on all devices - desktop, tablet, and mobile.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check AI status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAIStatus();
+            
+            // Add fade-in animations to elements
+            setTimeout(() => {
+                document.querySelectorAll('.feature-card').forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('fade-in-up');
+                    }, index * 200);
+                });
+            }, 500);
+        });
+
+        async function checkAIStatus() {
+            try {
+                const response = await fetch('/ai-status');
+                const data = await response.json();
+                
+                const aiStatus = document.getElementById('aiStatus');
+                const aiStatusText = document.getElementById('aiStatusText');
+                
+                if (data.ai_available) {
+                    aiStatus.className = 'alert alert-success';
+                    aiStatusText.innerHTML = `<strong>AI Models Active!</strong> Using ${data.models.sentence_model} for intelligent bug analysis`;
+                } else {
+                    aiStatus.className = 'alert alert-warning';
+                    aiStatusText.innerHTML = `<strong>Rule-based Mode:</strong> ${data.message}`;
+                }
+                
+                aiStatus.style.display = 'block';
+            } catch (error) {
+                console.error('Error checking AI status:', error);
+                const aiStatus = document.getElementById('aiStatus');
+                aiStatus.className = 'alert alert-danger';
+                aiStatus.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>Error:</strong> Could not check AI status';
+                aiStatus.style.display = 'block';
+            }
+        }
+
+        // Sample bug data for testing
+        const sampleBugs = {
+            "bugs": [
+                {"title": "Login button not responsive", "description": "Users click login button but it doesn't respond, appears grayed out"},
+                {"title": "Database connection timeout", "description": "SQL queries are timing out after 30 seconds, affecting all users"},
+                {"title": "XSS vulnerability in comment system", "description": "Found cross-site scripting vulnerability that could expose user data"},
+                {"title": "Page loads slowly", "description": "Homepage takes 10+ seconds to load, users are complaining about performance"},
+                {"title": "User session expires too quickly", "description": "Users get logged out after 5 minutes of inactivity, very annoying"},
+                {"title": "Mobile menu overlaps content", "description": "On mobile devices, the navigation menu covers the main content area"},
+                {"title": "Password reset emails not sending", "description": "Users request password reset but never receive the email"},
+                {"title": "API returns 500 error", "description": "The user profile API endpoint returns internal server error randomly"},
+                {"title": "CSS styles broken on IE", "description": "Website layout is completely broken when viewed in Internet Explorer"},
+                {"title": "Search function missing results", "description": "Search returns incomplete results, missing many relevant items"},
+                {"title": "File upload crashes browser", "description": "When uploading large files, the browser tab crashes completely"},
+                {"title": "SSL certificate expired", "description": "Website shows security warning, SSL certificate expired yesterday"},
+                {"title": "Color contrast too low", "description": "Text is hard to read due to poor color contrast, accessibility issue"},
+                {"title": "Cache not clearing properly", "description": "Old data still shows even after clearing browser cache"},
+                {"title": "Feature request: dark mode", "description": "Users requesting a dark theme option for better night time viewing"}
+            ]
+        };
+
+        // Mode switching
+        document.getElementById('singleMode').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('singleTestCard').style.display = 'block';
+                document.getElementById('batchTestCard').style.display = 'none';
+                hideResults();
+            }
+        });
+
+        document.getElementById('batchMode').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('singleTestCard').style.display = 'none';
+                document.getElementById('batchTestCard').style.display = 'block';
+                hideResults();
+            }
+        });
+
+        // Load sample data
+        document.getElementById('sampleDataBtn').addEventListener('click', function() {
+            document.getElementById('batchBugs').value = JSON.stringify(sampleBugs, null, 2);
+        });
+
+        // Single bug form
+        document.getElementById('triageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('bugTitle').value.trim();
+            const description = document.getElementById('bugDescription').value.trim();
+            
+            hideResults();
+            showLoading();
+            
+            try {
+                const response = await fetch('/triage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displaySingleResult(data);
+                } else {
+                    showError(data.error || 'An unexpected error occurred');
+                }
+            } catch (error) {
+                showError('Failed to connect to the API. Please check your connection and try again.');
+            }
+            
+            hideLoading();
+        });
+
+        // Batch form
+        document.getElementById('batchTriageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const bugsText = document.getElementById('batchBugs').value.trim();
+            
+            if (!bugsText) {
+                showError('Please enter bug reports JSON data');
+                return;
+            }
+
+            let bugsData;
+            try {
+                bugsData = JSON.parse(bugsText);
+            } catch (error) {
+                showError('Invalid JSON format. Please check your input.');
+                return;
+            }
+
+            hideResults();
+            showLoading();
+            
+            try {
+                const response = await fetch('/batch-triage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bugsData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayBatchResults(data);
+                } else {
+                    showError(data.error || 'An unexpected error occurred');
+                }
+            } catch (error) {
+                showError('Failed to connect to the API. Please check your connection and try again.');
+            }
+            
+            hideLoading();
+        });
+
+        function hideResults() {
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('batchResultCard').style.display = 'none';
+            document.getElementById('errorCard').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('batchSubmitBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('batchSubmitBtn').disabled = false;
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorCard').style.display = 'block';
+        }
+
+        function displaySingleResult(data) {
+            document.getElementById('categoryResult').textContent = data.category;
+            document.getElementById('urgencyResult').textContent = data.urgency;
+            
+            // Display confidence scores if available (AI mode)
+            if (data.category_confidence && data.urgency_confidence) {
+                const confidenceInfo = document.createElement('div');
+                confidenceInfo.className = 'mt-4 p-4 rounded-4';
+                confidenceInfo.style.cssText = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;';
+                confidenceInfo.innerHTML = `
+                    <h6 class="mb-3 fw-bold">
+                        <i class="fas fa-chart-line me-2 text-warning"></i>
+                        AI Confidence Analysis
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center p-3 rounded-3" style="background: rgba(255,255,255,0.2);">
+                                <div class="h4 mb-1 fw-bold text-warning">${(data.category_confidence * 100).toFixed(1)}%</div>
+                                <small class="text-white-50">Category Confidence</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 rounded-3" style="background: rgba(255,255,255,0.2);">
+                                <div class="h4 mb-1 fw-bold text-warning">${(data.urgency_confidence * 100).toFixed(1)}%</div>
+                                <small class="text-white-50">Urgency Confidence</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('resultCard').appendChild(confidenceInfo);
+            }
+            
+            const urgencyIcon = document.getElementById('urgencyIcon');
+            const urgencyResult = document.getElementById('urgencyResult');
+            
+            urgencyIcon.className = 'fas fa-exclamation-triangle fa-2x me-3';
+            
+            switch(data.urgency) {
+                case 'Critical':
+                    urgencyIcon.className += ' text-danger';
+                    urgencyResult.className = 'fs-5 fw-bold text-danger';
+                    break;
+                case 'High':
+                    urgencyIcon.className += ' text-warning';
+                    urgencyResult.className = 'fs-5 fw-bold text-warning';
+                    break;
+                case 'Medium':
+                    urgencyIcon.className += ' text-info';
+                    urgencyResult.className = 'fs-5 fw-bold text-info';
+                    break;
+                case 'Low':
+                    urgencyIcon.className += ' text-secondary';
+                    urgencyResult.className = 'fs-5 fw-bold text-secondary';
+                    break;
+            }
+            
+            document.getElementById('resultCard').style.display = 'block';
+        }
+
+        function displayBatchResults(data) {
+            // Update summary stats
+            document.getElementById('totalBugs').textContent = data.total_bugs;
+            document.getElementById('processedBugs').textContent = data.processed_successfully;
+            
+            // Count urgency levels
+            let criticalCount = 0;
+            let highCount = 0;
+            const categoryCount = {};
+            
+            data.results.forEach(result => {
+                if (result.urgency === 'Critical') criticalCount++;
+                if (result.urgency === 'High') highCount++;
+                
+                if (result.category) {
+                    categoryCount[result.category] = (categoryCount[result.category] || 0) + 1;
+                }
+            });
+            
+            document.getElementById('criticalBugs').textContent = criticalCount;
+            document.getElementById('highBugs').textContent = highCount;
+            
+            // Display category stats
+            const categoryStats = document.getElementById('categoryStats');
+            categoryStats.innerHTML = '';
+            Object.entries(categoryCount).forEach(([category, count]) => {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-info me-2';
+                badge.textContent = `${category}: ${count}`;
+                categoryStats.appendChild(badge);
+            });
+            
+            // Populate results table
+            const tableBody = document.getElementById('batchResultsTable');
+            tableBody.innerHTML = '';
+            
+            data.results.forEach((result, index) => {
+                const row = document.createElement('tr');
+                
+                let statusBadge = '';
+                let urgencyBadge = '';
+                
+                if (result.error) {
+                    statusBadge = '<span class="badge bg-danger">Error</span>';
+                    urgencyBadge = '<span class="text-muted">-</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-success">Success</span>';
+                    const urgencyClass = {
+                        'Critical': 'bg-danger',
+                        'High': 'bg-warning',
+                        'Medium': 'bg-info',
+                        'Low': 'bg-secondary'
+                    }[result.urgency] || 'bg-secondary';
+                    urgencyBadge = `<span class="badge ${urgencyClass}">${result.urgency}</span>`;
+                }
+                
+                row.innerHTML = `
+                    <td>${result.index + 1}</td>
+                    <td class="text-truncate" style="max-width: 200px;" title="${result.title || 'N/A'}">
+                        ${result.title || result.error || 'N/A'}
+                    </td>
+                    <td>${result.category || '-'}</td>
+                    <td>${urgencyBadge}</td>
+                    <td>${statusBadge}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            document.getElementById('batchResultCard').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
